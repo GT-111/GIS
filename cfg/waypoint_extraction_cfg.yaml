@@ -1,0 +1,10 @@
+maneuver_points_discovery:
+  window_size: 3
+  sog_threshold_multiplier: 8.0
+  cog_threshold_multiplier: 4.0
+hdbscan_params:
+  min_cluster_size: 5
+  min_samples: 2
+  cluster_selection_epsilon: 0.009
+  cluster_selection_method: 'leaf'
+data_dir: '/root/autodl-tmp/data_processed'

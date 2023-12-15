@@ -1,0 +1,17 @@
+in_dir: '/root/autodl-tmp/data_raw/'
+out_dir: '/root/autodl-tmp/data_processed/'
+vessels_info_dic_dir: '/root/autodl-tmp/ships_info_dict.json'
+SOG_threshold: 40.0 # filter out SOG > 40
+traj_points_threshold : 80 # filter out trajectories with less than 80 points
+trip_points_threshold : 10 # filter out trips with less than 10 points
+max_time_diff: 1800 # filter out trajectories with time 60*30 seconds apart(half an hour)
+max_dis_diff: 10 # filter out trajectories with distance 10 nautical miles apart
+column_rename_dict: {'Longitude': 'longitude', 'Latitude': 'latitude','# Timestamp' :'time', 'Ship type': 'ship_type',
+                    'Navigational status': 'navigational_status', 'Width': 'width', 'Length': 'length', 'Draught': 'draught'}
+colums_to_extract: ['MMSI', '# Timestamp', 'Longitude', 'Latitude', 'SOG', 'COG', 'Ship type', 'Navigational status', 'Width', 'Length', 'Draught']
+colums_to_drop_na: ['MMSI', 'time', 'longitude', 'latitude', 'SOG', 'COG']
+# region of interest
+LAT_MIN : 53.9884
+LAT_MAX : 56.4261
+LON_MIN : 9.7614
+LON_MAX : 15.1117
