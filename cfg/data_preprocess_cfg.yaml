@@ -1,6 +1,6 @@
-in_dir: '/root/autodl-tmp/data_raw/'
-out_dir: '/root/autodl-tmp/data_processed/'
-vessels_info_dic_dir: '/root/autodl-tmp/ships_info_dict.json'
+in_dir: './ais_raw'
+out_dir: './ais_preprocessed'
+vessels_info_dic_dir: './vessels_info/ships_info_dict.json'
 SOG_threshold: 40.0 # filter out SOG > 40
 traj_points_threshold : 80 # filter out trajectories with less than 80 points
 trip_points_threshold : 10 # filter out trips with less than 10 points

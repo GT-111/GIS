@@ -7,4 +7,6 @@ hdbscan_params:
   min_samples: 2
   cluster_selection_epsilon: 0.009
   cluster_selection_method: 'leaf'
-data_dir: '/root/autodl-tmp/data_processed'
+data_dir: './ais_preprocessed'
+out_dir: './waypoints/wp.feather'
+
