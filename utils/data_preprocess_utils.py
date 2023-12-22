@@ -213,7 +213,74 @@ def complete_missing_value(cfg, df):
     return df_completed
 
 
+def convert_time_format(df, time_column_ori='timestamp', time_column_new='timestamp'):
+    """
+    Parameters:
+        df: AIS data.
+        time_column_ori: original time column name.
+        time_column_new: new time column name.
+    Returns:
+        df: AIS data with time format converted.
+    """
+    time1 = pd.to_datetime(df[time_column_ori], errors='coerce', format="%Y-%m-%d %H:%M:%S %Z")
+    time2 = pd.to_datetime(df[time_column_ori], errors='coerce', format='%Y-%m-%d %H:%M:%S.%f %Z')
+    df[time_column_new] = time1.fillna(time2)
 
+    return df
+
+import geopandas as gpd
+from shapely.geometry import Point, Polygon
+def filter_trajs_between(df, polygon_1, polygon_2, group_column='mmsi',time_column = 'timestamp'):
+    """
+    Parameters:
+        df: dataframe
+        polygon_1: location 1
+        polygon_2: location 2
+        group_column: group column
+        time_column: time column
+    Returns:
+        df_to: dataframe of trajs start from polygon_1 and end at polygon_2
+        df_from: dataframe of trajs start from polygon_2 and end at polygon_1
+    """
+    
+    df_from = pd.DataFrame(columns=[*df.columns])
+    df_to = pd.DataFrame(columns=[*df.columns])
+    for mmsi, group in df.groupby(group_column):
+        geometry = [Point(lon, lat) for lon, lat in zip(group['longitude'], group['latitude'])]
+        gdf = gpd.GeoDataFrame(group, geometry=geometry, crs="EPSG:4326")
+        points_within_polygon_1 = gpd.sjoin(gdf, polygon_1, predicate='within')
+        points_within_polygon_2 = gpd.sjoin(gdf, polygon_2, predicate='within')
+        if (not points_within_polygon_1.empty) and (not points_within_polygon_2.empty):
+            
+            if points_within_polygon_1[points_within_polygon_1['status'] == 1.0].empty:
+                if points_within_polygon_1[points_within_polygon_1['speed'] <= 0.5].empty:
+                    continue
+                start_row_to = points_within_polygon_1[points_within_polygon_1['speed'] <= 0.5].iloc[-1]
+                end_row_from = points_within_polygon_1[points_within_polygon_1['speed'] <= 0.5].iloc[0]
+            else:
+                start_row_to = points_within_polygon_1[points_within_polygon_1['status'] == 1.0].iloc[-1]
+                end_row_from = points_within_polygon_1[points_within_polygon_1['status'] == 1.0].iloc[0]
+            start_time_to = start_row_to[time_column]
+            end_time_from = end_row_from[time_column]
+
+            if points_within_polygon_2[points_within_polygon_2['status'] == 1.0].empty:
+                if points_within_polygon_2[points_within_polygon_2['speed'] <= 0.5].empty:
+                    continue
+                start_row_from = points_within_polygon_2[points_within_polygon_2['speed'] <= 0.5].iloc[-1]
+                end_row_to = points_within_polygon_2[points_within_polygon_2['speed'] <= 0.5].iloc[0]
+            else:
+                start_row_from = points_within_polygon_2[points_within_polygon_2['status'] == 1.0].iloc[-1]
+                end_row_to = points_within_polygon_2[points_within_polygon_2['status'] == 1.0].iloc[0]
+
+            start_time_from = start_row_from[time_column]
+            end_time_to = end_row_to[time_column]
+            
+            subset_to = group[(group[time_column] >= start_time_to) & (group[time_column] <= end_time_to)]
+            subset_from = group[(group[time_column] >= start_time_from) & (group[time_column] <= end_time_from)]
+            df_to = pd.concat([df_to, subset_to])
+            df_from = pd.concat([df_from, subset_from])
+            
+    return df_to, df_from
 
 import requests
 from bs4 import BeautifulSoup

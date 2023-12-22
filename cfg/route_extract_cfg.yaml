@@ -1,0 +1,6 @@
+raw_data_dir: '/root/autodl-tmp/GIS/'
+save_dir: '/root/autodl-tmp/route_between/'
+# location_1 and location_2 are the two regions where the routes travel through them are extracted.
+location_1: './region_polygons/JP.geojson'
+location_2: './region_polygons/KSA.geojson'
+columns_to_extract: ['mmsi', 'timestamp', 'longitude', 'latitude', 'speed', 'course', 'heading', 'msg_type', 'status','length', 'width']
