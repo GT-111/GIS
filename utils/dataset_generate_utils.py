@@ -42,7 +42,6 @@ def generate_dataset(day, cfg, df):
         result_dic: dict, the dictionary of the features of the day.
     """
 
-    # 生成固定时间间隔统计数组
     idx = pd.date_range(day, periods=4, freq='6H')
     gdf = gpd.read_file(cfg.convex_hull_dir) # waypoint hulls
     gdf['label'] = gdf.reset_index().index
@@ -53,18 +52,17 @@ def generate_dataset(day, cfg, df):
 
     df['period'] = -1
     df['time'] = pd.to_datetime(df['time'])
-    # df = df.groupby('MMSI').apply(get_traj_point_type)
-    #
-    for i in range(1, len(idx) + 1):
+    
+    for i in range(len(idx)):
         
-        period_idx = df['time'] >= idx[i - 1]
+        period_idx = df['time'] >= idx[i]
         df.loc[period_idx, 'period'] = i
     
     # num in-flow out-flow speed (4-dimensional feature) 
     feature_dic = {}
     vessels_type_list = ['Sailing', 'Pleasure', 'Cargo', 'Fishing', 'Passenger', 'Tanker', 'Tug', 'Other', 'Total']
     for vessel_type in vessels_type_list:
-        feature_dic[vessel_type] = [pd.DataFrame(0, columns=range(-1, len(waypoints)), index=range(1, len(idx) + 1)) for i in range(4)]
+        feature_dic[vessel_type] = [pd.DataFrame(0, columns=range(-1, len(waypoints)), index=range(len(idx))) for i in range(4)]
     
 
     N = len(waypoints)
@@ -83,11 +81,11 @@ def generate_dataset(day, cfg, df):
         num_out = df_out.groupby(['period', 'label']).size().unstack(fill_value=0)
         num_inout = df_inout.groupby(['period', 'label']).size().unstack(fill_value=0)
 
-        num = df_vessel_type.groupby(['period','MMSI', 'label']).size().unstack(fill_value=0)
+        num = df_vessel_type.reset_index(drop=True).groupby(['period','MMSI', 'label']).size().unstack(fill_value=0)
         speed = df_vessel_type.groupby(['period','label']).agg({'SOG': 'mean'}).unstack(fill_value=0)['SOG']
         num[num > 0] = 1
         # 
-        num = num.groupby('period').sum()
+        num = num.groupby('period').sum().reset_index(drop=True)
         features[0] = features[0].add(num, fill_value=0)  # flow
         features[1] = features[1].add(num_in, fill_value=0).add(num_inout, fill_value=0)  # in-flow
         features[2] = features[2].add(num_out, fill_value=0).add(num_inout, fill_value=0)  # out-flow
