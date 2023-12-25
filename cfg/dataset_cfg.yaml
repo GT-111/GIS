@@ -1,1 +1,2 @@
 data_dir: './ais_flow'
+time_intervals: [4, 6, 8, 12, 24] # interms of hours

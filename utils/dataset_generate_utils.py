@@ -31,18 +31,20 @@ def get_traj_point_type(group, cfg):
     group.set_index('index', inplace=True)
     return group
 
-def generate_dataset(day, cfg, df):
+def generate_dataset(day, cfg, df, time_interval:int):
 
     """
     Parameters:
         day: str, the date of the day to be processed.
         cfg: config object.
         df: AIS data, with column 'inout' and 'label' added.
+        time_interval: int, the time interval of the data, in terms of hour.
     Returns:
         result_dic: dict, the dictionary of the features of the day.
     """
-
-    idx = pd.date_range(day, periods=4, freq='6H')
+    periods = int(24 // time_interval)
+    freq = str(time_interval) + 'H'
+    idx = pd.date_range(day, periods=periods, freq=freq)
     gdf = gpd.read_file(cfg.convex_hull_dir) # waypoint hulls
     gdf['label'] = gdf.reset_index().index
     gdf['centroid'] = gdf['geometry'].centroid.to_crs(crs='EPSG:4326')
@@ -64,7 +66,6 @@ def generate_dataset(day, cfg, df):
     for vessel_type in vessels_type_list:
         feature_dic[vessel_type] = [pd.DataFrame(0, columns=range(-1, len(waypoints)), index=range(len(idx))) for i in range(4)]
     
-
     N = len(waypoints)
     for vessel_type, features in feature_dic.items():
         vessel_type_mask = df['ship_type'] == vessel_type
@@ -80,7 +81,6 @@ def generate_dataset(day, cfg, df):
         num_in = df_in.groupby(['period', 'label']).size().unstack(fill_value=0)
         num_out = df_out.groupby(['period', 'label']).size().unstack(fill_value=0)
         num_inout = df_inout.groupby(['period', 'label']).size().unstack(fill_value=0)
-
         num = df_vessel_type.reset_index(drop=True).groupby(['period','MMSI', 'label']).size().unstack(fill_value=0)
         speed = df_vessel_type.groupby(['period','label']).agg({'SOG': 'mean'}).unstack(fill_value=0)['SOG']
         num[num > 0] = 1
@@ -107,7 +107,7 @@ def generate_dataset(day, cfg, df):
         f_day = pd.DataFrame()
         for i in range(-1, N):
             f_day = f_day.copy()
-            f_day[i] = [feature_tmp[v0][i + 1] for v0 in range(4)]
+            f_day[i] = [feature_tmp[v0][i + 1] for v0 in range(periods)]
 
         f_day = f_day.rename(index=dict(zip(f_day.index, idx)))
         result_dic[vessel_type] = np.array(f_day.values.tolist())

@@ -1,3 +1,4 @@
 in_dir: '/root/autodl-tmp/data_processed/'
 out_dir: './ais_flow/'
 convex_hull_dir: './waypoints/convex_hull.geojson'
+time_intervals: [4, 6, 8, 12, 24] # interms of hours

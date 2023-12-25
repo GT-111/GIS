@@ -3,10 +3,6 @@ from yaml import Loader
 import glob
 import os
 import pandas as pd
-# cudf
-import cudf
-# cupy
-import cupy as cp
 import numpy as np
 
 def get_config(config_path:str):
@@ -43,6 +39,15 @@ def get_last_file(path):
     latest_file = max(list_of_files, key=os.path.getctime)
 
     return latest_file
+
+def get_all_subdirectories(directory_path):
+    files_and_directories = os.listdir(directory_path)
+    subdirectories = []
+    for item in files_and_directories:
+        item_path = os.path.join(directory_path, item)  
+        if os.path.isdir(item_path):
+            subdirectories.append(item_path)
+    return subdirectories
 
 def get_all_files(directory_path):
 
