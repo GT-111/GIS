@@ -114,12 +114,13 @@ class DenmarkDataset():
         vessel_types_cnt = len(vessel_types)
         type_index_dic = {}
         time_interval = int(time_interval[:-1])
-        feature_arr = np.zeros((int(time_span/ time_interval), time_interval , wp_cnt, vessel_types_cnt, feature_dim))
+        interval_per_day = int(24/time_interval)
+        feature_arr = np.zeros((int(time_span/ interval_per_day), interval_per_day , wp_cnt, vessel_types_cnt, feature_dim))
         for _, category in enumerate(result_dic.keys()):
             if category not in vessel_types:
                 category = 'Other'
             
-            feature_arr[:, :, :, vessel_types.index(category), :] = result_dic[category].reshape((int(time_span/ time_interval), time_interval , wp_cnt, feature_dim))
+            feature_arr[:, :, :, vessel_types.index(category), :] = result_dic[category].reshape((int(time_span/ interval_per_day), interval_per_day , wp_cnt, feature_dim))
             type_index_dic[category] = vessel_types.index(category)
         return feature_arr, type_index_dic
         

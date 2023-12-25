@@ -1,0 +1,4 @@
+tensor_decomposition:
+  rank: 7
+  time_interval: 6 # interms of hours
+  vessel_types: ['Passenger', 'Tanker', 'Cargo', 'Other']
