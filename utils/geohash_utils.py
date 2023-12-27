@@ -191,7 +191,7 @@ class QuadTree:
             neighbor_ship_numbers_std = np.std(neighbor_ship_numbers)
             # print(neighbor_ship_numbers_mean, neighbor_ship_numbers_std)
             threshold = neighbor_ship_numbers_mean + alpha * neighbor_ship_numbers_std
-            if len(node.ship_dic) < threshold  or len(node.ship_dic) <= 5:
+            if len(node.ship_dic) < threshold  or len(node.ship_dic) <= 4:
                 node.valid = False
 
 def assign_label(leaf_nodes):
@@ -231,19 +231,16 @@ def get_convex_hulls(waypoints):
         hull = ConvexHull(points)
         # add convex hull's vertices to the map
         convex_hull_polygon = Polygon(hull.points[hull.vertices])
-        gdf = pd.concat([gdf, gpd.GeoDataFrame({'label': label, 'geometry': convex_hull_polygon}, index=[0])])
-
+        gdf = pd.concat([gdf, gpd.GeoDataFrame({'label': label, 'geometry': convex_hull_polygon}, index=[0], crs='EPSG:4326')])
+        gdf['label'] = gdf.reset_index().index
+        gdf.crs = 'EPSG:4326'
+        gdf['centroid'] = gdf['geometry'].centroid.to_crs(crs='EPSG:4326')
     return gdf
 
 def get_adjacency_matrix(convex_hulls, df):
-    convex_hulls['label'] = convex_hulls.reset_index().index
-
-    convex_hulls['centroid'] = convex_hulls['geometry'].to_crs(crs='EPSG:4326').centroid
-    waypoints = convex_hulls['centroid'].apply(lambda p: (p.y, p.x)).values
+    waypoints = np.array(convex_hulls['centroid'].apply(lambda p: (p.y, p.x)).to_list())
     labels = convex_hulls['label'].values
     labels = labels[labels != -1]
-
-    df.sort_values(by=['MMSI', 'time'], inplace=True)
     adjacency_matrix = np.zeros((labels.shape[0], labels.shape[0]))
     for mmsi, group in df.groupby('MMSI'):
     
@@ -262,21 +259,19 @@ def get_adjacency_matrix(convex_hulls, df):
 import utils.waypoint_extract_utils as weu
 
 def get_edges_list(convex_hulls, adjacency_matrix, flow_threshold=2, dis_threshold=24):
-    convex_hulls['label'] = convex_hulls.reset_index().index
-    convex_hulls['centroid'] = convex_hulls['geometry'].to_crs(crs='EPSG:4326').centroid
-    waypoints = convex_hulls['centroid'].apply(lambda p: (p.y, p.x)).values
+    waypoints = np.array(convex_hulls['centroid'].apply(lambda p: (p.y, p.x)).to_list())
     edges_list = []
     dis_matrix = weu.calculate_geodesic_distance_matrix(waypoints, waypoints)
 
     for i in range(waypoints.shape[0]):
         for j in range(waypoints.shape[0]):
 
-            if (adjacency_matrix[i,j] > flow_threshold) and (dis_matrix[i,j] > dis_threshold):
+            if (adjacency_matrix[i,j] > flow_threshold) and (dis_matrix[i,j] < dis_threshold):
                 edges_list.append([(waypoints[i][0],waypoints[i][1]),(waypoints[j][0], waypoints[j][1])])
             else:
                 adjacency_matrix[i,j] = 0
 
-    return edges_list, adjacency_matrix
+    return edges_list, adjacency_matrix, dis_matrix
 
 def visualize_node_list(df, node_list: [QuadTreeNode], color='red'):
     # visualize the node list

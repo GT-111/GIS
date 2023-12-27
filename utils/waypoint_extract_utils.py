@@ -36,8 +36,8 @@ def dicover_maneuver_points(df:pd.DataFrame, cfg:EasyDict):
     return maneuver_points
 
 def calculate_geodesic_distance_matrix(matrix1:np.ndarray, matrix2:np.ndarray):
-    lat1, lon1 = matrix1.T
-    lat2, lon2 = matrix2.T 
+    lat1, lon1 = matrix1.T[0], matrix1.T[1]
+    lat2, lon2 = matrix2.T[0], matrix2.T[1]
     
     lat1 = np.radians(lat1)
     lon1 = np.radians(lon1)

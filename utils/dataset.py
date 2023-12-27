@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 from typing import List
+from numpy import int64
 from . import data_preprocess_utils as pre
 
 class DenmarkDataset():
@@ -10,6 +12,82 @@ class DenmarkDataset():
         self._raw_files_dict = self._directories2dict(self._directories)
         self._day_range = self._get_day_range()
         self._interval_list = [ (time_interval) for time_interval in self._raw_files_dict.keys()]
+        self._adjacency_matrix = self._get_adjacency_matrix()
+        self._distance_matrix = self._get_distance_matrix()
+        self._convex_hulls = self._get_convex_hulls()
+
+    def _get_convex_hulls(self):
+        """
+        Get the convex hull of the dataset
+        """
+        _convex_hulls = gpd.read_feather(self._cfg.convex_hull_dir)
+        _convex_hulls.reset_index(inplace=True, drop=True)
+        return _convex_hulls
+    
+    def _get_adjacency_matrix(self):
+        """
+        Get the adjacency matrix of the dataset
+        """
+        return np.load(self._cfg.adjacency_matrix_dir)
+    def _get_distance_matrix(self):
+        """
+        Get the distance matrix of the dataset
+        """
+        return np.load(self._cfg.distance_matrix_dir)
+    def _generate_rel_file(self):
+        wp_labels = self._convex_hulls['label'].values
+        rel_dic = []
+        for wp_origin in wp_labels:
+            for wp_destination in wp_labels:
+                if wp_origin != wp_destination:
+                    rel_dic.append({'origin_id': wp_origin, 
+                                    'destination_id': wp_destination, 
+                                    'cost': self._distance_matrix[wp_origin, wp_destination], 
+                                    'weight': self._adjacency_matrix[wp_origin, wp_destination]
+                                    })
+        rel_df = pd.DataFrame(rel_dic)
+        rel_df['type'] = 'geo'
+        rel_df['rel_id'] = rel_df.index.astype(int64)
+        new_order = ['rel_id', 'type', 'origin_id', 'destination_id', 'cost', 'weight']
+        rel_df = rel_df[new_order]
+
+        return rel_df
+    def _generate_geo_file(self):
+        
+        geo_df = pd.DataFrame()
+        geo_df['geo_id'] = self._convex_hulls['label']
+        geo_df['type'] = 'Point'
+        geo_df['coordinates'] = self._convex_hulls['centroid'].apply(lambda p: [p.y, p.x])
+        geo_df.reset_index(drop=True, inplace=True)
+        new_order = ['geo_id', 'type', 'coordinates']
+        geo_df = geo_df[new_order]
+
+        return geo_df
+    
+    def _generate_dyna_file(self, start_date, end_date, time_interval='4H', vessel_type='Total'):
+        day_range = pd.date_range(start_date, end_date, freq=time_interval)
+        range_data_dic = self.get_data_by_range(start_date=start_date, end_date=end_date, time_interval=time_interval)
+        waypoints_num = self._convex_hulls['label'].unique().shape[0]
+        vessel_type = 'Total'
+        dyna_df_list = []
+        for wp in range(waypoints_num):
+            for time_idx, time in enumerate(day_range):
+                day_str = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+                dyna_df_list.append({
+                    'type': 'state',
+                    'time': day_str,
+                    'entity_id': wp,
+                    'num': range_data_dic[vessel_type][time_idx, wp, 0],
+                    'in_flow': range_data_dic[vessel_type][time_idx, wp, 1],
+                    'out_flow': range_data_dic[vessel_type][time_idx, wp, 2],
+                    'speed': range_data_dic[vessel_type][time_idx, wp, 3]
+                })
+        dyna_df = pd.DataFrame(dyna_df_list)
+        dyna_df['dyna_id'] = dyna_df.index
+        new_order = ['dyna_id', 'type', 'time', 'entity_id', 'num', 'in_flow', 'out_flow', 'speed']
+        dyna_df = dyna_df[new_order]
+        return dyna_df
+    
     def _directories2dict(self, directories):
         raw_files_dict = {}
         for directory in directories:
@@ -92,6 +170,25 @@ class DenmarkDataset():
                 result_dic[key] = np.concatenate((result_dic[key], day_dic[key]))
         return result_dic
     
+
+    def convert2PEMS(self):
+        """
+        Convert the dataset to the PEMS format
+        """
+        rel_df = self._generate_rel_file()
+        geo_df = self._generate_geo_file()
+        dyna_df = self._generate_dyna_file(start_date=self._cfg.PEMS.start_date, 
+                                           end_date=self._cfg.PEMS.end_date, 
+                                           time_interval=self._cfg.PEMS.time_interval, 
+                                           vessel_type=self._cfg.PEMS.vessel_type
+                                           )
+        path = self._cfg.PEMS.save_dir
+        name = self._cfg.PEMS.name
+        rel_df.to_csv(path + name + '.rel', index=False)
+        geo_df.to_csv(path + name + '.geo', index=False)
+        dyna_df.to_csv(path + name + '.dyna', index=False)
+
+
     def dic2array(self, result_dic, vessel_types:List[str]=['Passenger', 'Tanker', 'Cargo', 'Other', 'Total'], time_interval='4H'):
         """
         Parameters:

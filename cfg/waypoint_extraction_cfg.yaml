@@ -3,10 +3,11 @@ maneuver_points_discovery:
   sog_threshold_multiplier: 8.0
   cog_threshold_multiplier: 4.0
 hdbscan_params:
-  min_cluster_size: 5
-  min_samples: 2
-  cluster_selection_epsilon: 0.009
+  min_cluster_size: 4
+  min_samples: 3
+  cluster_selection_epsilon: 0.008
   cluster_selection_method: 'leaf'
-data_dir: './ais_preprocessed'
+# data_dir: './ais_preprocessed'
+data_dir: '/root/autodl-tmp/data_processed'
 out_dir: './waypoints/wp.feather'
 

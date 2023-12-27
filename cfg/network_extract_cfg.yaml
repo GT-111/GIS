@@ -1,0 +1,7 @@
+wp_dir: './waypoints/wp.feather'
+data_dir: '/root/autodl-tmp/data_processed'
+precision_max: 5
+bounds: [53.9884, 9.7614, 56.4261, 15.1117]
+convex_hull_save_dir: './waypoints/convex_hull.feather'
+adjacency_matrix_save_dir: './waypoints/adjacency_matrix.npy'
+distance_matrix_save_dir: './waypoints/distance_matrix.npy'

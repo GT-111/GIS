@@ -4,9 +4,7 @@ import numpy as np
 from tqdm import tqdm
 def get_traj_point_type(group, cfg):
     
-    gdf = gpd.read_file(cfg.convex_hull_dir) # waypoint hulls
-    gdf['label'] = gdf.reset_index().index
-    gdf['centroid'] = gdf['geometry'].centroid.to_crs(crs='EPSG:4326')
+    gdf = gpd.read_feather(cfg.convex_hull_dir) # waypoint hulls
     group.reset_index(inplace=True)
     geometry = gpd.points_from_xy(group['longitude'], group['latitude'])
     result = gpd.sjoin(gdf, gpd.GeoDataFrame(geometry=geometry, crs='EPSG:4326'), how="inner", predicate="intersects")
@@ -31,7 +29,7 @@ def get_traj_point_type(group, cfg):
     group.set_index('index', inplace=True)
     return group
 
-def generate_dataset(day, cfg, df, time_interval:int):
+def generate_dataset(day, cfg, df, time_interval:int, keep_unlabeled=False):
 
     """
     Parameters:
@@ -39,15 +37,14 @@ def generate_dataset(day, cfg, df, time_interval:int):
         cfg: config object.
         df: AIS data, with column 'inout' and 'label' added.
         time_interval: int, the time interval of the data, in terms of hour.
+        keep_unlabeled: bool, whether to keep the unlabeled waypoints.
     Returns:
         result_dic: dict, the dictionary of the features of the day.
     """
     periods = int(24 // time_interval)
     freq = str(time_interval) + 'H'
     idx = pd.date_range(day, periods=periods, freq=freq)
-    gdf = gpd.read_file(cfg.convex_hull_dir) # waypoint hulls
-    gdf['label'] = gdf.reset_index().index
-    gdf['centroid'] = gdf['geometry'].centroid.to_crs(crs='EPSG:4326')
+    gdf = gpd.read_feather(cfg.convex_hull_dir) # waypoint hulls
     waypoints = gdf['centroid'].apply(lambda p: (p.y, p.x)).values
     labels = gdf['label'].values
     labels = labels[labels != -1]
@@ -105,9 +102,14 @@ def generate_dataset(day, cfg, df, time_interval:int):
         feature_tmp[np.isnan(feature_tmp)] = 0
         feature_tmp = feature_tmp.transpose(1, 2, 0)  # 4*node*4
         f_day = pd.DataFrame()
-        for i in range(-1, N):
-            f_day = f_day.copy()
-            f_day[i] = [feature_tmp[v0][i + 1] for v0 in range(periods)]
+        if keep_unlabeled:
+            for i in range(-1, N):
+                f_day = f_day.copy()
+                f_day[i] = [feature_tmp[v0][i + 1] for v0 in range(periods)]
+        else:
+            for i in range(N):
+                f_day = f_day.copy()
+                f_day[i] = [feature_tmp[v0][i + 1] for v0 in range(periods)]
 
         f_day = f_day.rename(index=dict(zip(f_day.index, idx)))
         result_dic[vessel_type] = np.array(f_day.values.tolist())

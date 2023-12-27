@@ -1,2 +1,13 @@
 data_dir: './ais_flow'
+convex_hull_dir: './waypoints/convex_hull.feather'
+adjacency_matrix_dir: './waypoints/adjacency_matrix.npy'
+distance_matrix_dir: './waypoints/distance_matrix.npy'
+
 time_intervals: [4, 6, 8, 12, 24] # interms of hours
+PEMS:
+  name: 'AISFlow'
+  save_dir: './ais_PEMS/'
+  start_date: '2019-01-01'
+  end_date: '2019-03-31'
+  time_interval: '4H'
+  vessel_type: 'Total'
