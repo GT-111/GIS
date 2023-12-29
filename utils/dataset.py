@@ -14,6 +14,8 @@ class DenmarkDataset():
         self._interval_list = [ (time_interval) for time_interval in self._raw_files_dict.keys()]
         self._adjacency_matrix = self._get_adjacency_matrix()
         self._distance_matrix = self._get_distance_matrix()
+        self._width_matrix = self._get_width_matrix()
+        self._length_matrix = self._get_length_matrix()
         self._convex_hulls = self._get_convex_hulls()
 
     def _get_convex_hulls(self):
@@ -34,6 +36,18 @@ class DenmarkDataset():
         Get the distance matrix of the dataset
         """
         return np.load(self._cfg.distance_matrix_dir)
+    def _get_width_matrix(self):
+        """
+        Get the width matrix of the dataset
+        """
+        return np.load(self._cfg.width_matrix_dir)
+    
+    def _get_length_matrix(self):
+        """
+        Get the length matrix of the dataset
+        """
+        return np.load(self._cfg.length_matrix_dir)
+    
     def _generate_rel_file(self):
         wp_labels = self._convex_hulls['label'].values
         rel_dic = []
@@ -43,12 +57,14 @@ class DenmarkDataset():
                     rel_dic.append({'origin_id': wp_origin, 
                                     'destination_id': wp_destination, 
                                     'cost': self._distance_matrix[wp_origin, wp_destination], 
-                                    'weight': self._adjacency_matrix[wp_origin, wp_destination]
+                                    'weight': self._adjacency_matrix[wp_origin, wp_destination],
+                                    'length_max': self._length_matrix[wp_origin, wp_destination],
+                                    'width_max': self._width_matrix[wp_origin, wp_destination],
                                     })
         rel_df = pd.DataFrame(rel_dic)
         rel_df['type'] = 'geo'
         rel_df['rel_id'] = rel_df.index.astype(int64)
-        new_order = ['rel_id', 'type', 'origin_id', 'destination_id', 'cost', 'weight']
+        new_order = ['rel_id', 'type', 'origin_id', 'destination_id', 'cost', 'weight', 'length_max', 'width_max']
         rel_df = rel_df[new_order]
 
         return rel_df

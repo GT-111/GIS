@@ -237,13 +237,17 @@ def get_convex_hulls(waypoints):
         gdf['centroid'] = gdf['geometry'].centroid.to_crs(crs='EPSG:4326')
     return gdf
 
-def get_adjacency_matrix(convex_hulls, df):
+def get_adjacency_shape_matrix(convex_hulls, df):
     waypoints = np.array(convex_hulls['centroid'].apply(lambda p: (p.y, p.x)).to_list())
     labels = convex_hulls['label'].values
     labels = labels[labels != -1]
     adjacency_matrix = np.zeros((labels.shape[0], labels.shape[0]))
+    width_matrix = np.zeros((labels.shape[0], labels.shape[0]))
+    length_matrix = np.zeros((labels.shape[0], labels.shape[0]))
     for mmsi, group in df.groupby('MMSI'):
-    
+        length_mean = group['width'].mean()
+        width_mean = group['length'].mean()
+
         geometry = gpd.points_from_xy(group['longitude'], group['latitude'])
         result = gpd.sjoin(convex_hulls, gpd.GeoDataFrame(geometry=geometry, crs='EPSG:4326', index=group.index), how="inner", predicate="intersects")
 
@@ -253,8 +257,9 @@ def get_adjacency_matrix(convex_hulls, df):
             continue
         idx = result['label'].values
         adjacency_matrix[idx[:-1], idx[1:]] += 1
-
-    return adjacency_matrix
+        length_matrix[idx[:-1], idx[1:]] = np.maximum(length_matrix[idx[:-1], idx[1:]], length_mean)
+        width_matrix[idx[:-1], idx[1:]] = np.maximum(width_matrix[idx[:-1], idx[1:]], width_mean)
+    return adjacency_matrix, length_matrix, width_matrix
 
 import utils.waypoint_extract_utils as weu
 

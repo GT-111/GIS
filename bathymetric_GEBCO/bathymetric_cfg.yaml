@@ -1,0 +1,2 @@
+bathymetry_file: 'bathymetric_GEBCO/bathymetry.tif'
+tid_file: 'bathymetric_GEBCO/TID.tif'

@@ -2,7 +2,8 @@ data_dir: './ais_flow'
 convex_hull_dir: './waypoints/convex_hull.feather'
 adjacency_matrix_dir: './waypoints/adjacency_matrix.npy'
 distance_matrix_dir: './waypoints/distance_matrix.npy'
-
+width_matrix_dir: './waypoints/width_matrix.npy'
+length_matrix_dir: './waypoints/length_matrix.npy'
 time_intervals: [4, 6, 8, 12, 24] # interms of hours
 PEMS:
   name: 'AISFlow'

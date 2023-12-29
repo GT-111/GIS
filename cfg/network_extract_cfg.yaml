@@ -5,3 +5,6 @@ bounds: [53.9884, 9.7614, 56.4261, 15.1117]
 convex_hull_save_dir: './waypoints/convex_hull.feather'
 adjacency_matrix_save_dir: './waypoints/adjacency_matrix.npy'
 distance_matrix_save_dir: './waypoints/distance_matrix.npy'
+length_matrix_save_dir: './waypoints/length_matrix.npy'
+width_matrix_save_dir: './waypoints/width_matrix.npy'
+
