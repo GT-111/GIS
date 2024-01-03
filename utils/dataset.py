@@ -73,7 +73,7 @@ class DenmarkDataset():
         geo_df = pd.DataFrame()
         geo_df['geo_id'] = self._convex_hulls['label']
         geo_df['type'] = 'Point'
-        geo_df['coordinates'] = self._convex_hulls['centroid'].apply(lambda p: [p.y, p.x])
+        geo_df['coordinates'] = self._convex_hulls['centroid'].apply(lambda p: [p.x, p.y]) # lon lat
         geo_df.reset_index(drop=True, inplace=True)
         new_order = ['geo_id', 'type', 'coordinates']
         geo_df = geo_df[new_order]

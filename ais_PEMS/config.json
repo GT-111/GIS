@@ -10,7 +10,10 @@
       "geo"
     ],
     "geo": {
-      "cost": "num"
+      "cost": "num", 
+      "weight": "num",
+      "length_max": "num",
+      "width_max": "num"
     }
   },
   "dyna": {
@@ -19,23 +22,26 @@
     ],
     "state": {
       "entity_id": "geo_id",
-      "traffic_flow": "num"
+      "num": "num",
+      "in_flow" : "num",
+      "out_flow" : "num",
+      "speed": "num"
     }
   },
   "info": {
     "data_col": [
-      "traffic_flow"
+      "num", "in_flow", "out_flow", "speed"
     ],
     "weight_col": "cost",
     "data_files": [
-      "PEMSD7"
+      "AISFlow"
     ],
-    "geo_file": "PEMSD7",
-    "rel_file": "PEMSD7",
-    "output_dim": 1,
-    "time_intervals": 300,
-    "init_weight_inf_or_zero": "zero",
-    "set_weight_link_or_dist": "link",
+    "geo_file": "AISFlow",
+    "rel_file": "AISFlow",
+    "output_dim": 4,
+    "time_intervals": 14400,
+    "init_weight_inf_or_zero": "inf",
+    "set_weight_link_or_dist": "dist",
     "calculate_weight_adj": false,
     "weight_adj_epsilon": 0.1
   }
